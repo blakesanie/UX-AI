@@ -1,0 +1,19 @@
+{
+  "name": "ux-ai",
+  "version": "1.0.0",
+  "description": "<h1>UX-AI</h1>",
+  "main": "UXAI.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blakesanie/UX-AI.git"
+  },
+  "author": "Blake Sanie",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/blakesanie/UX-AI/issues"
+  },
+  "homepage": "https://github.com/blakesanie/UX-AI#readme"
+}
