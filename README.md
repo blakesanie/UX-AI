@@ -66,7 +66,7 @@ import UXAI from "ux-ai"
 Sign Out the user when idle for 5 inference cycles:
 
 ```javascript
-if (history.slice(history.length - 6).every((status) => status === "idle")) {
+if (history.slice(history.length - 5).every((status) => status === "idle")) {
     signOutCurrentUser();
 }
 ```
@@ -84,7 +84,7 @@ Gauge session page interest after once 10 inference cycles have passed:
 ```javascript
 if (history.length >= 10) {
     const interest = history.filter(status => status === "engaged").length / history.length;
-    console.log(`Interested ${Math.round(interest * 100)}% of the time);
+    console.log(`Interested ${Math.round(interest * 100)}% of the time`);
 }
 ```
 

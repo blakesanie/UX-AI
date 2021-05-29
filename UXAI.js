@@ -9,16 +9,14 @@ class UXAI {
     this.mouseClientX;
     this.mouseClientY;
     this.eventListeners = [];
-    this.addEventListener("mousemove", function (e) {
-      this.mouseClientX = e.clientX;
-      this.mouseClientY = e.clientY;
-    });
+    this.addEventListener("mousemove", this.updateMousePosition.bind(this));
     this.timeStampOffset = 0;
     this.timeLeft = 0;
-
+    this.history = [];
     this.startListening();
     this.startCaptureLoop();
     this.startInferenceLoop();
+    this.loadModel();
   }
 
   addEventListener(event, func) {
@@ -83,6 +81,11 @@ class UXAI {
     }
   }
 
+  updateMousePosition(e) {
+    this.mouseClientX = e.clientX;
+    this.mouseClientY = e.clientY;
+  }
+
   handleClick(e) {
     if (this.captureLoop) {
       this.setTimeStampOffset(e);
@@ -112,7 +115,7 @@ class UXAI {
       let { key } = e;
       const timeStamp = e.timeStamp - this.timeStampOffset;
       // checkForInactivity();
-      if (key.match(/[a-z]/i)) {
+      if (key.length == 1 && key.match(/[a-z]/i)) {
         // alphabet
         this.currentSnapshot.alpha.push(timeStamp);
       } else if (key == " ") {
@@ -203,17 +206,18 @@ class UXAI {
     this.addEventListener("mouseleave", this.handleMouseleave.bind(this));
     this.addEventListener("mousemove", this.handleMousemove.bind(this));
     this.addEventListener(
-      "visibilityChange",
+      "visibilitychange",
       this.handleVisibilityChange.bind(this)
     );
   }
 
   enqueueSnapshot(snapshot) {
-    console.log(snapshot, this.encodeSnapshot(snapshot));
+    // console.log(snapshot, this.encodeSnapshot(snapshot));
     this.snapshots.push(this.encodeSnapshot(snapshot));
   }
 
   startCaptureLoop() {
+    console.log("start capture loop");
     this.captureFunction();
     this.captureLoop = setInterval(
       this.captureFunction.bind(this),
@@ -249,21 +253,9 @@ class UXAI {
       "symbol",
       "tab",
       "number",
+      "clicks",
     ]) {
       out.push(snapshot[key].length);
-    }
-
-    function weaveArrays(l1, l2) {
-      let out = [];
-      for (let i = 0; i < Math.max(l1.length, l2.length); i++) {
-        if (i < l1.length) {
-          out.push(l1[i]);
-        }
-        if (i < l2.length) {
-          out.push(l2[i]);
-        }
-      }
-      return out;
     }
 
     out.push(snapshot.mouseleaves.length);
@@ -291,7 +283,7 @@ class UXAI {
       let prevMouseY = avgMouseY;
       let finalX = snapshot.mousemoves[snapshot.mousemoves.length - 1].clientX;
       let finalY = snapshot.mousemoves[snapshot.mousemoves.length - 1].clientY;
-      netMouseMovement = distance(prevMouseX, prevMouseY, finalX, finalY);
+      netMouseMovement = distance(prevMouseX, finalX, prevMouseY, finalY);
       avgMouseX += finalX;
       avgMouseX /= 2;
       avgMouseY += finalY;
@@ -301,8 +293,8 @@ class UXAI {
         const currentY = move["clientY"];
         totalMouseMovement += distance(
           prevMouseX,
-          prevMouseY,
           currentX,
+          prevMouseY,
           currentY
         );
         prevMouseX = currentX;
@@ -318,7 +310,7 @@ class UXAI {
     let totalScroll = 0;
     let avgScrollPos = snapshot["scrollY"];
 
-    if (snapshot.scrolls > 0) {
+    if (snapshot.scrolls.length > 0) {
       let prevPos = snapshot["scrollY"];
       let finalPos =
         snapshot["scrolls"][snapshot["scrolls"].length - 1]["position"];
@@ -326,7 +318,7 @@ class UXAI {
       avgScrollPos = (prevPos + finalPos) / 2;
       for (const scroll of snapshot["scrolls"]) {
         let currentY = scroll["position"];
-        totalScroll += abs(prevPos - currentY);
+        totalScroll += Math.abs(prevPos - currentY);
         prevPos = currentY;
       }
     }
@@ -334,29 +326,507 @@ class UXAI {
     out.push(totalScroll);
     out.push(avgScrollPos);
 
-    out.push(snapshot["timeGone"] / snapshot["interval"]);
+    out.push(snapshot["timeGone"]);
 
     return out;
   }
 
   startInferenceLoop() {
+    console.log("start inference loop");
     this.inferenceLoop = setInterval(
       this.inferenceFunction.bind(this),
       this.inferenceInterval
     );
   }
 
-  inferenceFunction() {
+  async inferenceFunction() {
+    if (
+      this.snapshots.length <
+      this.inferenceInterval / this.snapshotInterval
+    ) {
+      // wait for first window to compute
+      await this.sleep(
+        this.inferenceInterval - this.snapshots.length * this.snapshotInterval
+      );
+    }
     const window = this.snapshots.slice(
       this.snapshots.length -
         Math.round(this.inferenceInterval / this.snapshotInterval)
     );
-    // console.log(window);
+    const invocationTime = new Date();
+    while (!this.model) {
+      const now = new Date();
+      if (invocationTime + this.inferenceInterval - now < 1000) {
+        // if within one second of next inference cycle, skip this one
+        return;
+      }
+      await this.sleep(200);
+    }
+    // alert("model exists");
+    console.log(window);
+    const tensor = tf.tensor([window], [1, 25, 23]);
+    tensor.print();
+    console.log(tensor.shape);
+    const result = (
+      await this.model
+        .predict(tensor, {
+          batchSize: 1,
+        })
+        .array()
+    )[0];
+    console.log(result);
+    const statuses = ["distracted", "engaged", "idle", "lost", "rushed"];
+    const greatest = Math.max(...result);
+    for (let i = 0; i < result.length; i++) {
+      if (result[i] == greatest) {
+        this.history.push(statuses[i]);
+        if (this.callback) {
+          this.callback(this.history);
+        }
+        break;
+      }
+    }
   }
 
   stopInferenceLoop() {
     clearInterval(this.inferenceLoop);
     this.inferenceLoop = undefined;
+  }
+
+  sleep(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  async loadModel() {
+    while (typeof tf === "undefined") {
+      await this.sleep(200);
+    }
+    this.model = await tf.loadLayersModel("/models/v1/model.json");
+    console.log(this.model);
+    this.testModel();
+  }
+
+  async testModel() {
+    const inputs = [
+      [
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0.0, 0.0, 293.0,
+          501.0, 0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+      ],
+      [
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0.0, 0.0, 293.0,
+          501.0, 0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+      ],
+      [
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+      ],
+      [
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+        [
+          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
+          0, 0, 124, 0,
+        ],
+      ],
+    ];
+    const tensor = tf.tensor(inputs);
+    console.log(tensor.shape);
+    const result = await this.model
+      .predict(tensor, {
+        batchSize: 1,
+      })
+      .array();
+    console.log(result);
   }
 }
 

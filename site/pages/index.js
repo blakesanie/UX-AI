@@ -6,7 +6,11 @@ import { useEffect } from "react";
 
 export default function Home() {
   useEffect(() => {
-    const uxai = new UXAI({});
+    const uxai = new UXAI({
+      callback: function (history) {
+        console.log(history);
+      },
+    });
   }, []);
   let elements = [];
   for (let i = 0; i < 1000; i++) {
@@ -14,6 +18,11 @@ export default function Home() {
   }
   return (
     <>
+      <Head>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js">
+          {" "}
+        </script>
+      </Head>
       <h1>Header</h1>
       {elements}
     </>
