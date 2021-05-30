@@ -1,8 +1,13 @@
 class UXAI {
-  constructor({ inferenceInterval = 5000, callback = undefined }) {
+  constructor({
+    inferenceInterval = 5000,
+    inferenceCallback = undefined,
+    captureCallback = undefined,
+  }) {
     this.snapshotInterval = 200;
     this.inferenceInterval = inferenceInterval;
-    this.callback = callback;
+    this.captureCallback = captureCallback;
+    this.inferenceCallback = inferenceCallback;
     this.snapshots = [];
     this.currentSnapshot = {};
     this.mouseOverWindow = true;
@@ -15,8 +20,9 @@ class UXAI {
     this.history = [];
     this.startListening();
     this.startCaptureLoop();
-    this.startInferenceLoop();
-    this.loadModel();
+    this.active = true;
+    // this.startInferenceLoop();
+    // this.loadModel();
   }
 
   addEventListener(event, func) {
@@ -36,6 +42,7 @@ class UXAI {
     }
     this.stopCaptureLoop();
     this.startInferenceLoop();
+    this.active = false;
   }
 
   generateNewSnapshot() {
@@ -53,8 +60,7 @@ class UXAI {
         scrolls: [],
         mousemoves: [],
         clicks: [],
-        mouseleaves: [],
-        mouseenters: [],
+        borderCrosses: [],
         interval: this.snapshotInterval,
         timeGone: 0,
         docLength: Math.max(
@@ -71,6 +77,7 @@ class UXAI {
         mouseX: this.mouseClientX,
         mouseY: this.mouseClientY,
         mouseOverWindow: this.mouseOverWindow,
+        creationTime: new Date(),
       }
     );
   }
@@ -163,9 +170,9 @@ class UXAI {
     this.mouseOverWindow = false;
     if (this.captureLoop) {
       this.setTimeStampOffset(e);
-      const timeStamp = e.timeStamp - this.timeStampOffset;
-      this.currentSnapshot.mouseleaves.push({
-        timeStamp: timeStamp,
+      this.currentSnapshot.borderCrosses.push({
+        entering: false,
+        timeStamp: new Date(),
       });
     }
   }
@@ -174,9 +181,9 @@ class UXAI {
     this.mouseOverWindow = true;
     if (this.captureLoop) {
       this.setTimeStampOffset(e);
-      const timeStamp = e.timeStamp - this.timeStampOffset;
-      this.currentSnapshot.mouseenters.push({
-        timeStamp: timeStamp,
+      this.currentSnapshot.borderCrosses.push({
+        entering: true,
+        timeStamp: new Date(),
       });
     }
   }
@@ -213,11 +220,15 @@ class UXAI {
 
   enqueueSnapshot(snapshot) {
     // console.log(snapshot, this.encodeSnapshot(snapshot));
-    this.snapshots.push(this.encodeSnapshot(snapshot));
+    const encoded = this.encodeSnapshot(snapshot);
+    if (this.captureCallback) {
+      this.captureCallback(snapshot, encoded);
+    }
+    this.snapshots.push(encoded);
   }
 
   startCaptureLoop() {
-    console.log("start capture loop");
+    // console.log("start capture loop");
     this.captureFunction();
     this.captureLoop = setInterval(
       this.captureFunction.bind(this),
@@ -225,7 +236,7 @@ class UXAI {
     );
   }
 
-  endLoop() {
+  stopCaptureLoop() {
     clearInterval(this.captureLoop);
     this.captureLoop = undefined;
   }
@@ -240,10 +251,8 @@ class UXAI {
 
   encodeSnapshot(snapshot) {
     let out = [];
-    out.push(snapshot.height);
-    out.push(snapshot.width);
-    out.push(snapshot.docLength);
 
+    let sum = 0;
     for (const key of [
       "alpha",
       "arrow",
@@ -253,41 +262,40 @@ class UXAI {
       "symbol",
       "tab",
       "number",
-      "clicks",
     ]) {
-      out.push(snapshot[key].length);
+      sum += snapshot[key].length;
     }
+    out.push(sum);
+    out.push(snapshot.clicks.length);
 
-    out.push(snapshot.mouseleaves.length);
-    out.push(snapshot.mouseenters.length);
-    out.push(snapshot.mouseOverWindow ? 1 : 0);
+    let timeOverWindow = 0;
+    let mouseOverWindow = snapshot.mouseOverWindow;
+    let lastTimeOverWindow = snapshot.creationTime.getTime();
+    for (let cross of snapshot.borderCrosses) {
+      if (cross.entering) {
+        timeOverWindow += cross.timeStamp.getTime() - lastTimeOverWindow;
+      }
+      lastTimeOverWindow = cross.timeStamp.getTime();
+      mouseOverWindow = !mouseOverWindow;
+    }
+    if (mouseOverWindow) {
+      timeOverWindow +=
+        snapshot.interval +
+        snapshot.creationTime.getTime() -
+        lastTimeOverWindow;
+    }
+    // console.log(timeOverWindow, snapshot.interval);
+    out.push(timeOverWindow / snapshot.interval);
 
     function distance(x1, x2, y1, y2) {
       return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
     }
 
-    let netMouseMovement = 0;
     let totalMouseMovement = 0;
-    let avgMouseX = 0;
-    let avgMouseY = 0;
-    if (snapshot.mouseX) {
-      avgMouseX = snapshot.mouseX;
-      avgMouseY = snapshot.mouseY;
-    } else if (snapshot.mousemoves.length > 0) {
-      avgMouseX = snapshot.mousemoves[0].clientX;
-      avgMouseY = snapshot.mousemoves[0].clientY;
-    }
 
     if (snapshot.mousemoves.length > 0) {
-      let prevMouseX = avgMouseX;
-      let prevMouseY = avgMouseY;
-      let finalX = snapshot.mousemoves[snapshot.mousemoves.length - 1].clientX;
-      let finalY = snapshot.mousemoves[snapshot.mousemoves.length - 1].clientY;
-      netMouseMovement = distance(prevMouseX, finalX, prevMouseY, finalY);
-      avgMouseX += finalX;
-      avgMouseX /= 2;
-      avgMouseY += finalY;
-      avgMouseY /= 2;
+      let prevMouseX = snapshot.mouseX || snapshot.mousemoves[0].clientX;
+      let prevMouseY = snapshot.mouseY || snapshot.mousemoves[0].clientY;
       for (const move of snapshot.mousemoves) {
         const currentX = move["clientX"];
         const currentY = move["clientY"];
@@ -301,30 +309,23 @@ class UXAI {
         prevMouseY = currentY;
       }
     }
-    out.push(netMouseMovement);
-    out.push(totalMouseMovement);
-    out.push(avgMouseX);
-    out.push(avgMouseY);
 
-    let netScroll = 0;
+    out.push(totalMouseMovement);
+
     let totalScroll = 0;
-    let avgScrollPos = snapshot["scrollY"];
+    let scrollPos = snapshot["scrollY"];
 
     if (snapshot.scrolls.length > 0) {
-      let prevPos = snapshot["scrollY"];
-      let finalPos =
-        snapshot["scrolls"][snapshot["scrolls"].length - 1]["position"];
-      netScroll = finalPos - prevPos;
-      avgScrollPos = (prevPos + finalPos) / 2;
+      let prevPos = scrollPos;
       for (const scroll of snapshot["scrolls"]) {
-        let currentY = scroll["position"];
+        const currentY = scroll["position"];
         totalScroll += Math.abs(prevPos - currentY);
         prevPos = currentY;
       }
     }
-    out.push(netScroll);
+
     out.push(totalScroll);
-    out.push(avgScrollPos);
+    out.push(scrollPos);
 
     out.push(snapshot["timeGone"]);
 
@@ -332,7 +333,7 @@ class UXAI {
   }
 
   startInferenceLoop() {
-    console.log("start inference loop");
+    // console.log("start inference loop");
     this.inferenceLoop = setInterval(
       this.inferenceFunction.bind(this),
       this.inferenceInterval
@@ -363,10 +364,10 @@ class UXAI {
       await this.sleep(200);
     }
     // alert("model exists");
-    console.log(window);
+    // console.log(window);
     const tensor = tf.tensor([window], [1, 25, 23]);
-    tensor.print();
-    console.log(tensor.shape);
+    // tensor.print();
+    // console.log(tensor.shape);
     const result = (
       await this.model
         .predict(tensor, {
@@ -374,7 +375,7 @@ class UXAI {
         })
         .array()
     )[0];
-    console.log(result);
+    // console.log(result);
     const statuses = ["distracted", "engaged", "idle", "lost", "rushed"];
     const greatest = Math.max(...result);
     for (let i = 0; i < result.length; i++) {
@@ -404,429 +405,20 @@ class UXAI {
       await this.sleep(200);
     }
     this.model = await tf.loadLayersModel("/models/v1/model.json");
-    console.log(this.model);
+    // console.log(this.model);
     this.testModel();
   }
 
   async testModel() {
-    const inputs = [
-      [
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0.0, 0.0, 293.0,
-          501.0, 0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-      ],
-      [
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0.0, 0.0, 293.0,
-          501.0, 0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-      ],
-      [
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-      ],
-      [
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-        [
-          824, 1436, 3175, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 293, 501,
-          0, 0, 124, 0,
-        ],
-      ],
-    ];
+    const inputs = [];
     const tensor = tf.tensor(inputs);
-    console.log(tensor.shape);
+    // console.log(tensor.shape);
     const result = await this.model
       .predict(tensor, {
         batchSize: 1,
       })
       .array();
-    console.log(result);
+    // console.log(result);
   }
 }
 

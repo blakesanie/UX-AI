@@ -7,8 +7,8 @@ import { useEffect } from "react";
 export default function Home() {
   useEffect(() => {
     const uxai = new UXAI({
-      callback: function (history) {
-        console.log(history);
+      captureCallback: function (snapshot, encoded) {
+        console.log(snapshot, encoded);
       },
     });
   }, []);
