@@ -1,7 +1,12 @@
 {
   "name": "ux-ai",
   "version": "1.0.0",
-  "description": "<h1>UX-AI</h1>",
+  "description": "Enabling websites to evaluate and enhance user experience with Artificial Intelligence",
+  "author": {
+    "name": "Blake Sanie",
+    "email": "blake@sanie.com",
+    "url": "https://blakesanie.com"
+  },
   "main": "UXAI.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,12 +15,11 @@
     "type": "git",
     "url": "git+https://github.com/blakesanie/UX-AI.git"
   },
-  "author": "Blake Sanie",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/blakesanie/UX-AI/issues"
   },
-  "homepage": "https://github.com/blakesanie/UX-AI#readme",
+  "homepage": "https://uxai.blakesanie.com",
   "files": [
     "/UXAI.js"
   ]

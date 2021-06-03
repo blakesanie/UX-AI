@@ -3,14 +3,17 @@
 <h1>UX-AI</h1>
 <p id="headline">Enabling websites to evaluate and enhance user experience with Artificial Intelligence</p>
 <div id="actions">
-<a href="https://www.npmjs.com/package/react-bubble-ui">
-<img alt="npm" src="https://img.shields.io/npm/v/ux-ai?style=for-the-badge&logo=npm" style="border-radius: 5px; overflow: hidden;">
+<a href="https://www.npmjs.com/package/ux-ai">
+<img alt="npm" src="https://img.shields.io/npm/v/ux-ai?style=for-the-badge&logo=npm&color=red" style="border-radius: 5px; overflow: hidden;">
+</a>
+<a href="https://www.npmjs.com/package/ux-ai">
+<img alt="npm bundle size" src="https://img.shields.io/bundlephobia/min/ux-ai?color=success&label=minified&logo=webpack&logoColor=white&style=for-the-badge" style="border-radius: 5px; overflow: hidden;">
 </a>
 <a href="https://paypal.me/blakesanie">
 <img alt="Donate" src="https://img.shields.io/badge/Donate-%20?style=for-the-badge&logo=paypal&color=blue" style="border-radius: 5px; overflow: hidden;">
 </a>
 <a href="https://github.com/blakesanie/UX-AI">
-<img alt="GitHub" src="https://img.shields.io/badge/GitHub-%20?style=for-the-badge&logo=github&color=grey" style="border-radius: 5px; overflow: hidden;">
+<img alt="GitHub" src="https://img.shields.io/badge/View%20Source-%20?style=for-the-badge&logo=github&color=grey" style="border-radius: 5px; overflow: hidden;">
 </a>
 <a href="https://github.com/blakesanie/UX-AI/blob/main/LICENSE">
 <img alt="Apache 2.0" src="https://img.shields.io/github/license/blakesanie/UX-AI?logo=apache&style=for-the-badge&color=4B4BAB&label=%20" style="border-radius: 5px; overflow: hidden;">
@@ -45,7 +48,7 @@ _Don't worry, UX-AI does not save any observations of user behavior. No user-rel
 
 ## Demo
 
-View a live demo [here](https://blakesanie.com).
+View a live demo [here](https://uxai.blakesanie.com/#demo).
 
 ## Installation
 
@@ -112,7 +115,7 @@ if (history[history.length - 1] === "distracted") {
 }
 ```
 
-Gauge session page interest after once 10 inference cycles have passed:
+Gauge session page interest after 10 inference cycles have passed:
 
 ```javascript
 if (history.length >= 10) {
