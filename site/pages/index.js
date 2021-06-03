@@ -1,6 +1,6 @@
 import Head from "next/head";
 import UXAI from "ux-ai";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { CopyBlock, dracula, anOldHope, railscast } from "react-code-blocks";
 import Button from "@material-ui/core/Button";
 import Slider from "@material-ui/core/Slider";
@@ -13,6 +13,8 @@ converter.setFlavor("github");
 const HtmlToReactParser = require("html-to-react").Parser;
 const htmlToReactParser = new HtmlToReactParser();
 
+let uxai;
+
 function ValueLabelComponent(props) {
   const { children, open, value } = props;
 
@@ -23,13 +25,19 @@ function ValueLabelComponent(props) {
       placement="top"
       className="rounded"
       title={`${value}${`${value}`.length == 1 ? ".0" : ""}s`}
+      PopperProps={{
+        container: () => {
+          if (document) {
+            return document.querySelector("#__next");
+          }
+          return undefined;
+        },
+      }}
     >
       {children}
     </Tooltip>
   );
 }
-
-let uxai;
 
 export async function getStaticProps(context) {
   console.log("get props");
@@ -126,6 +134,7 @@ export default function Home(props) {
   // for (let i = 0; i < 1000; i++) {
   //   elements.push(<p key={i}>Test</p>);
   // }
+
   return (
     <>
       <Head>
@@ -139,9 +148,8 @@ export default function Home(props) {
           // console.log(element.language);
           // return <p>codeblock</p>;
           return (
-            <div className="codeBlock  rounded" key={i}>
+            <div className="codeBlock rounded" key={element.text}>
               <CopyBlock
-                codeBlock={true}
                 style={{}}
                 key={i}
                 text={element.text}
@@ -155,7 +163,7 @@ export default function Home(props) {
         }
         if (element.type == "demo") {
           return (
-            <div className="demo" key={i}>
+            <div className="demo" key="demo">
               <p>
                 UX-AI is ready to run on this page! Activate UX-AI with the
                 button below, or deactivate to adjust the inference interval.
@@ -170,6 +178,7 @@ export default function Home(props) {
                 // marks
                 min={3}
                 max={10}
+                className="slider"
                 style={{
                   opacity: uxaiRunning ? 0.2 : 1,
                   pointerEvents: uxaiRunning ? "none" : "auto",
@@ -190,8 +199,14 @@ export default function Home(props) {
                     uxai.deactivate();
                     uxai = undefined;
                     showSnack(`UX-AI Deactivated`);
+                    document.querySelector(
+                      ".MuiTooltip-popper"
+                    ).style.opacity = 1;
                   } else {
                     showSnack(`UX-AI Activated`);
+                    document.querySelector(
+                      ".MuiTooltip-popper"
+                    ).style.opacity = 0.2;
                     uxai = new UXAI({
                       inferenceInterval: inferenceInterval * 1000,
                       inferenceCallback: (history) => {
@@ -228,7 +243,7 @@ export default function Home(props) {
         // if (!element.text.includes("<ul")) {
         //   return <div key={i}>{component}</div>;
         // }
-        return component;
+        return <Fragment key={element.text}>{component}</Fragment>;
         // <div key={i} dangerouslySetInnerHTML={{ __html: element.text }} />
       })}
       <Snackbar
