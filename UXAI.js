@@ -410,7 +410,9 @@ class UXAI {
     while (typeof tf === "undefined") {
       await this.sleep(200);
     }
-    this.model = await tf.loadLayersModel(`/models/${this.version}/model.json`);
+    this.model = await tf.loadLayersModel(
+      `./models/${this.version}/model.json`
+    );
     // console.log(this.model);
     // this.testModel();
   }
