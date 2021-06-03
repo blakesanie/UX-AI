@@ -1,65 +1,84 @@
+<div id="header">
+
 <h1>UX-AI</h1>
+<p id="headline">Enabling websites to evaluate and enhance user experience with Artificial Intelligence</p>
 
-Evaluating and Enhancing User Experience across the web with Artificial Intelligence
+</div>
 
-<h2>Table of Contents</h2>
+## Table of Contents
 
-- [Introduction](#introduction)
-- [Installation](#installation)
-- [Getting Started](#getting-started)
-- [Examples and Applications](#examples-and-applications)
-- [Usage with JavaScript UI Frameworks](#usage-with-javascript-ui-frameworks)
-- [License and Attribution](#license-and-attribution)
+<ul class="sticky">
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#demo">Demo</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#getting-started">Getting Started</a></li>
+<li><a href="#examples-and-applications">Examples and Applications</a></li>
+<li><a href="#future-improvements">Future Improvements</a></li>
+<li><a href="#license-and-attribution">License and Attribution</a></li>
+</ul>
 
 ## Introduction
 
-UX-AI provides the ability to strengthen user experience by intelligently inferring user behavior status given demonstrated page interactions. In realtime, the AI agent periodically classifies such behavior statuses as either `distracted, engaged, idle, lost, or rushed`.
+UX-AI provides the ability to strengthen user experience by intelligently inferring user behavior status given demonstrated page interactions. In realtime, the AI agent periodically classifies such behavior statuses as either `distracted, engaged, idle, or rushed`.
 
 Our goal is for sites to leverage this valuable information to improve user experience during the browsing session.
 
-For instance, once detecting that a user is **lost**, the underlying site can place visual emphasis on its search bar. Or, once a user is said to be `rushed`, a component containing contact information can be discretely presented before the user navigates away.
+For instance, once detecting that a user is `rushed`, a component containing contact information can be discretely presented before the user navigates away. See more use cases and examples [here](#examples-and-applications).
 
 Most of the time, user behavior is classified as `engaged`, suggesting that the user is following along with the page as intended.
 
+_Don't worry, UX-AI does not save any observations of user behavior. No user-related data collected by UX-AI ever leaves the browser. Upon refresh or page close, all respective data UX-AI disappears._
+
+## Demo
+
+View a live demo [here](https://blakesanie.com).
+
 ## Installation
 
-Download the package with npm
+First, make sure to link TensorFlow.js, the ML framework on top of which UX-AI's models are built.
+
+```html
+<head>
+    ...
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
+</head>
+```
+
+Download UX-AI with npm
 
 ```
 npm install ux-ai
 ```
 
-or link to your project with a \<script> tag
+or link the package with a \<script> tag
 
 ```html
 <head>
     ...
-    <script async src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ux-ai@latest/UXAI.js"></script>
 </head>
 ```
 
-_Note that if installing via \<script> tag, the TensorFlow.js package (ML Backend) must be explicitly linked_
-
 ## Getting Started
 
-Instantiate a UXAI object, providing a handler function called after each inference with the history of classified behavior statuses as Strings.
+If using a UI framework with Node.js, don't forget to import the package. This is not necessary if the package is imported via \<script\> tag.
 
-```javascript
-const uxai = new UXAI((history) => {
-    // history is an array with values: "distracted", "engaged", "idle", "lost", or "rushed"
-
-    /*
-        your logic here
-    */
-})
-```
-
-If using a UI framework with Node.js, don't forget to import the package
 ```javascript
 // top of file
 import UXAI from "ux-ai"
 ```
+
+Instantiate a UXAI object, passing in an object of options.
+
+```javascript
+const uxai = new UXAI({
+    inferenceInterval: 10000, // ms between predictions, must be between 3000 and 10000.
+    inferenceCallback: history => {}, // history is array of behavior status Strings
+})
+```
+
+Note that behavior status classifications are more stable with a greater inferenceInterval.
 
 ## Examples and Applications
 
@@ -90,7 +109,11 @@ if (history.length >= 10) {
 
 Of course, these are just a few simple examples. Feel free to take UX-AI in whatever direction you choose, staying well within ethical boundaries.
 
-## Usage with JavaScript UI Frameworks
+## Future Improvements
+
+Observation and intelligent prediction/classification methods are always under further development, though often occurring outside this repository. UX-AI will automatically use the most recently published ML model, as it is loaded over the cloud.
 
 ## License and Attribution
+
+This project is released under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0). In your own derivations, significant changes should be stated and attributions should be maintained in the NOTICE file.
 

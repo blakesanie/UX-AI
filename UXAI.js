@@ -1,9 +1,11 @@
 class UXAI {
   constructor({
-    inferenceInterval = 5000,
+    version = "v1",
+    inferenceInterval = 10000,
     inferenceCallback = undefined,
     captureCallback = undefined,
   }) {
+    this.version = version;
     this.snapshotInterval = 200;
     this.inferenceInterval = inferenceInterval;
     this.captureCallback = captureCallback;
@@ -21,8 +23,8 @@ class UXAI {
     this.startListening();
     this.startCaptureLoop();
     this.active = true;
-    // this.startInferenceLoop();
-    // this.loadModel();
+    this.startInferenceLoop();
+    this.loadModel();
   }
 
   addEventListener(event, func) {
@@ -41,7 +43,7 @@ class UXAI {
       );
     }
     this.stopCaptureLoop();
-    this.startInferenceLoop();
+    this.stopInferenceLoop();
     this.active = false;
   }
 
@@ -350,9 +352,12 @@ class UXAI {
         this.inferenceInterval - this.snapshots.length * this.snapshotInterval
       );
     }
-    const window = this.snapshots.slice(
-      this.snapshots.length -
-        Math.round(this.inferenceInterval / this.snapshotInterval)
+    const window = this.padWithZeros(
+      this.snapshots.slice(
+        this.snapshots.length -
+          Math.round(this.inferenceInterval / this.snapshotInterval)
+      ),
+      50
     );
     const invocationTime = new Date();
     while (!this.model) {
@@ -365,8 +370,9 @@ class UXAI {
     }
     // alert("model exists");
     // console.log(window);
-    const tensor = tf.tensor([window], [1, 25, 23]);
-    // tensor.print();
+    console.log(window);
+    const tensor = tf.tensor([window], [1, 50, 7]);
+    tensor.print();
     // console.log(tensor.shape);
     const result = (
       await this.model
@@ -376,13 +382,13 @@ class UXAI {
         .array()
     )[0];
     // console.log(result);
-    const statuses = ["distracted", "engaged", "idle", "lost", "rushed"];
+    const statuses = ["distracted", "engaged", "idle", "rushed"];
     const greatest = Math.max(...result);
     for (let i = 0; i < result.length; i++) {
       if (result[i] == greatest) {
         this.history.push(statuses[i]);
-        if (this.callback) {
-          this.callback(this.history);
+        if (this.inferenceCallback) {
+          this.inferenceCallback(this.history);
         }
         break;
       }
@@ -404,9 +410,9 @@ class UXAI {
     while (typeof tf === "undefined") {
       await this.sleep(200);
     }
-    this.model = await tf.loadLayersModel("/models/v1/model.json");
+    this.model = await tf.loadLayersModel(`/models/${this.version}/model.json`);
     // console.log(this.model);
-    this.testModel();
+    // this.testModel();
   }
 
   async testModel() {
@@ -419,6 +425,17 @@ class UXAI {
       })
       .array();
     // console.log(result);
+  }
+
+  padWithZeros(arr, length) {
+    while (arr.length < length) {
+      let temp = [];
+      for (let i = 0; i < 7; i++) {
+        temp.push(0);
+      }
+      arr.push(temp);
+    }
+    return arr;
   }
 }
 
