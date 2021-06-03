@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build && next export",
     "start": "next start",
-    "deploy": "npm run build && gh-pages -d out"
+    "deploy": "npm run build && gh-pages -d out -t true",
+    "help": "gh-pages --help"
   },
   "dependencies": {
     "@material-ui/core": "^4.11.4",
