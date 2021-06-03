@@ -411,7 +411,7 @@ class UXAI {
       await this.sleep(200);
     }
     this.model = await tf.loadLayersModel(
-      `./models/${this.version}/model.json`
+      `https://blakesanie.github.io/UX-AI/models/v1/model.json`
     );
     // console.log(this.model);
     // this.testModel();
