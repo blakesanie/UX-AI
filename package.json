@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/blakesanie/UX-AI/issues"
   },
-  "homepage": "https://github.com/blakesanie/UX-AI#readme"
+  "homepage": "https://github.com/blakesanie/UX-AI#readme",
+  "files": [
+    "/UXAI.js"
+  ]
 }
