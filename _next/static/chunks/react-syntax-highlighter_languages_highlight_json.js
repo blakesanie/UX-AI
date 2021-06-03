@@ -1,0 +1,21 @@
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+(self["webpackChunk_N_E"] = self["webpackChunk_N_E"] || []).push([["react-syntax-highlighter_languages_highlight_json"],{
+
+/***/ "./node_modules/react-syntax-highlighter/node_modules/highlight.js/lib/languages/json.js":
+/*!***********************************************************************************************!*\
+  !*** ./node_modules/react-syntax-highlighter/node_modules/highlight.js/lib/languages/json.js ***!
+  \***********************************************************************************************/
+/***/ (function(module) {
+
+eval("module.exports = function(hljs) {\n  var LITERALS = {literal: 'true false null'};\n  var TYPES = [\n    hljs.QUOTE_STRING_MODE,\n    hljs.C_NUMBER_MODE\n  ];\n  var VALUE_CONTAINER = {\n    end: ',', endsWithParent: true, excludeEnd: true,\n    contains: TYPES,\n    keywords: LITERALS\n  };\n  var OBJECT = {\n    begin: '{', end: '}',\n    contains: [\n      {\n        className: 'attr',\n        begin: /\"/, end: /\"/,\n        contains: [hljs.BACKSLASH_ESCAPE],\n        illegal: '\\\\n',\n      },\n      hljs.inherit(VALUE_CONTAINER, {begin: /:/})\n    ],\n    illegal: '\\\\S'\n  };\n  var ARRAY = {\n    begin: '\\\\[', end: '\\\\]',\n    contains: [hljs.inherit(VALUE_CONTAINER)], // inherit is a workaround for a bug that makes shared modes with endsWithParent compile only the ending of one of the parents\n    illegal: '\\\\S'\n  };\n  TYPES.splice(TYPES.length, 0, OBJECT, ARRAY);\n  return {\n    contains: TYPES,\n    keywords: LITERALS,\n    illegal: '\\\\S'\n  };\n};//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9fTl9FLy4vbm9kZV9tb2R1bGVzL3JlYWN0LXN5bnRheC1oaWdobGlnaHRlci9ub2RlX21vZHVsZXMvaGlnaGxpZ2h0LmpzL2xpYi9sYW5ndWFnZXMvanNvbi5qcz85ZThlIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0FBQ0Esa0JBQWtCO0FBQ2xCO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EsYUFBYSxVQUFVO0FBQ3ZCO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBLE9BQU87QUFDUCxxQ0FBcUMsV0FBVztBQUNoRDtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EiLCJmaWxlIjoiLi9ub2RlX21vZHVsZXMvcmVhY3Qtc3ludGF4LWhpZ2hsaWdodGVyL25vZGVfbW9kdWxlcy9oaWdobGlnaHQuanMvbGliL2xhbmd1YWdlcy9qc29uLmpzLmpzIiwic291cmNlc0NvbnRlbnQiOlsibW9kdWxlLmV4cG9ydHMgPSBmdW5jdGlvbihobGpzKSB7XG4gIHZhciBMSVRFUkFMUyA9IHtsaXRlcmFsOiAndHJ1ZSBmYWxzZSBudWxsJ307XG4gIHZhciBUWVBFUyA9IFtcbiAgICBobGpzLlFVT1RFX1NUUklOR19NT0RFLFxuICAgIGhsanMuQ19OVU1CRVJfTU9ERVxuICBdO1xuICB2YXIgVkFMVUVfQ09OVEFJTkVSID0ge1xuICAgIGVuZDogJywnLCBlbmRzV2l0aFBhcmVudDogdHJ1ZSwgZXhjbHVkZUVuZDogdHJ1ZSxcbiAgICBjb250YWluczogVFlQRVMsXG4gICAga2V5d29yZHM6IExJVEVSQUxTXG4gIH07XG4gIHZhciBPQkpFQ1QgPSB7XG4gICAgYmVnaW46ICd7JywgZW5kOiAnfScsXG4gICAgY29udGFpbnM6IFtcbiAgICAgIHtcbiAgICAgICAgY2xhc3NOYW1lOiAnYXR0cicsXG4gICAgICAgIGJlZ2luOiAvXCIvLCBlbmQ6IC9cIi8sXG4gICAgICAgIGNvbnRhaW5zOiBbaGxqcy5CQUNLU0xBU0hfRVNDQVBFXSxcbiAgICAgICAgaWxsZWdhbDogJ1xcXFxuJyxcbiAgICAgIH0sXG4gICAgICBobGpzLmluaGVyaXQoVkFMVUVfQ09OVEFJTkVSLCB7YmVnaW46IC86L30pXG4gICAgXSxcbiAgICBpbGxlZ2FsOiAnXFxcXFMnXG4gIH07XG4gIHZhciBBUlJBWSA9IHtcbiAgICBiZWdpbjogJ1xcXFxbJywgZW5kOiAnXFxcXF0nLFxuICAgIGNvbnRhaW5zOiBbaGxqcy5pbmhlcml0KFZBTFVFX0NPTlRBSU5FUildLCAvLyBpbmhlcml0IGlzIGEgd29ya2Fyb3VuZCBmb3IgYSBidWcgdGhhdCBtYWtlcyBzaGFyZWQgbW9kZXMgd2l0aCBlbmRzV2l0aFBhcmVudCBjb21waWxlIG9ubHkgdGhlIGVuZGluZyBvZiBvbmUgb2YgdGhlIHBhcmVudHNcbiAgICBpbGxlZ2FsOiAnXFxcXFMnXG4gIH07XG4gIFRZUEVTLnNwbGljZShUWVBFUy5sZW5ndGgsIDAsIE9CSkVDVCwgQVJSQVkpO1xuICByZXR1cm4ge1xuICAgIGNvbnRhaW5zOiBUWVBFUyxcbiAgICBrZXl3b3JkczogTElURVJBTFMsXG4gICAgaWxsZWdhbDogJ1xcXFxTJ1xuICB9O1xufTsiXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./node_modules/react-syntax-highlighter/node_modules/highlight.js/lib/languages/json.js\n");
+
+/***/ })
+
+}]);

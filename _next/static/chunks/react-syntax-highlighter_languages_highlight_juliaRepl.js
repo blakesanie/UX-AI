@@ -1,0 +1,21 @@
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+(self["webpackChunk_N_E"] = self["webpackChunk_N_E"] || []).push([["react-syntax-highlighter_languages_highlight_juliaRepl"],{
+
+/***/ "./node_modules/react-syntax-highlighter/node_modules/highlight.js/lib/languages/julia-repl.js":
+/*!*****************************************************************************************************!*\
+  !*** ./node_modules/react-syntax-highlighter/node_modules/highlight.js/lib/languages/julia-repl.js ***!
+  \*****************************************************************************************************/
+/***/ (function(module) {
+
+eval("module.exports = function(hljs) {\n  return {\n    contains: [\n      {\n        className: 'meta',\n        begin: /^julia>/,\n        relevance: 10,\n        starts: {\n          // end the highlighting if we are on a new line and the line does not have at\n          // least six spaces in the beginning\n          end: /^(?![ ]{6})/,\n          subLanguage: 'julia'\n      },\n      // jldoctest Markdown blocks are used in the Julia manual and package docs indicate\n      // code snippets that should be verified when the documentation is built. They can be\n      // either REPL-like or script-like, but are usually REPL-like and therefore we apply\n      // julia-repl highlighting to them. More information can be found in Documenter's\n      // manual: https://juliadocs.github.io/Documenter.jl/latest/man/doctests.html\n      aliases: ['jldoctest']\n      }\n    ]\n  }\n};//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9fTl9FLy4vbm9kZV9tb2R1bGVzL3JlYWN0LXN5bnRheC1oaWdobGlnaHRlci9ub2RlX21vZHVsZXMvaGlnaGxpZ2h0LmpzL2xpYi9sYW5ndWFnZXMvanVsaWEtcmVwbC5qcz83NTNiIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0Esd0JBQXdCLEVBQUU7QUFDMUI7QUFDQSxPQUFPO0FBQ1A7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EiLCJmaWxlIjoiLi9ub2RlX21vZHVsZXMvcmVhY3Qtc3ludGF4LWhpZ2hsaWdodGVyL25vZGVfbW9kdWxlcy9oaWdobGlnaHQuanMvbGliL2xhbmd1YWdlcy9qdWxpYS1yZXBsLmpzLmpzIiwic291cmNlc0NvbnRlbnQiOlsibW9kdWxlLmV4cG9ydHMgPSBmdW5jdGlvbihobGpzKSB7XG4gIHJldHVybiB7XG4gICAgY29udGFpbnM6IFtcbiAgICAgIHtcbiAgICAgICAgY2xhc3NOYW1lOiAnbWV0YScsXG4gICAgICAgIGJlZ2luOiAvXmp1bGlhPi8sXG4gICAgICAgIHJlbGV2YW5jZTogMTAsXG4gICAgICAgIHN0YXJ0czoge1xuICAgICAgICAgIC8vIGVuZCB0aGUgaGlnaGxpZ2h0aW5nIGlmIHdlIGFyZSBvbiBhIG5ldyBsaW5lIGFuZCB0aGUgbGluZSBkb2VzIG5vdCBoYXZlIGF0XG4gICAgICAgICAgLy8gbGVhc3Qgc2l4IHNwYWNlcyBpbiB0aGUgYmVnaW5uaW5nXG4gICAgICAgICAgZW5kOiAvXig/IVsgXXs2fSkvLFxuICAgICAgICAgIHN1Ykxhbmd1YWdlOiAnanVsaWEnXG4gICAgICB9LFxuICAgICAgLy8gamxkb2N0ZXN0IE1hcmtkb3duIGJsb2NrcyBhcmUgdXNlZCBpbiB0aGUgSnVsaWEgbWFudWFsIGFuZCBwYWNrYWdlIGRvY3MgaW5kaWNhdGVcbiAgICAgIC8vIGNvZGUgc25pcHBldHMgdGhhdCBzaG91bGQgYmUgdmVyaWZpZWQgd2hlbiB0aGUgZG9jdW1lbnRhdGlvbiBpcyBidWlsdC4gVGhleSBjYW4gYmVcbiAgICAgIC8vIGVpdGhlciBSRVBMLWxpa2Ugb3Igc2NyaXB0LWxpa2UsIGJ1dCBhcmUgdXN1YWxseSBSRVBMLWxpa2UgYW5kIHRoZXJlZm9yZSB3ZSBhcHBseVxuICAgICAgLy8ganVsaWEtcmVwbCBoaWdobGlnaHRpbmcgdG8gdGhlbS4gTW9yZSBpbmZvcm1hdGlvbiBjYW4gYmUgZm91bmQgaW4gRG9jdW1lbnRlcidzXG4gICAgICAvLyBtYW51YWw6IGh0dHBzOi8vanVsaWFkb2NzLmdpdGh1Yi5pby9Eb2N1bWVudGVyLmpsL2xhdGVzdC9tYW4vZG9jdGVzdHMuaHRtbFxuICAgICAgYWxpYXNlczogWydqbGRvY3Rlc3QnXVxuICAgICAgfVxuICAgIF1cbiAgfVxufTsiXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./node_modules/react-syntax-highlighter/node_modules/highlight.js/lib/languages/julia-repl.js\n");
+
+/***/ })
+
+}]);
