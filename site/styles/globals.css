@@ -21,7 +21,7 @@
 }
 
 .sticky {
-  position: sticky !important;
+  position: sticky;
   top: 0;
   bottom: 0;
   z-index: 999;
@@ -168,9 +168,9 @@ code:not(.codeBlock *) {
 h2 {
   position: relative;
   font-size: 30px;
-  padding-top: 120px !important;
+  padding-top: 110px !important;
   margin-bottom: 10px;
-  margin-top: -50px;
+  margin-top: -40px;
 }
 
 #table-of-contents {
@@ -202,7 +202,7 @@ p:empty {
 
 li a,
 li {
-  padding: 6px 6px;
+  padding: 4px 6px;
 }
 
 li a {
@@ -301,4 +301,20 @@ p.label {
 
 .MuiSnackbar-root .MuiSnackbarContent-message {
   width: 100%;
+}
+
+@media screen and (max-width: 440px) {
+  ul {
+    position: static !important;
+  }
+  #__next > *,
+  #header {
+    padding: 0 25px;
+  }
+  /* p {
+    font-size: 16px;
+  }
+  .codeBlock * {
+    font-size: 13px !important;
+  } */
 }
