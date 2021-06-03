@@ -129,7 +129,7 @@ export default function Home(props) {
   return (
     <>
       <Head>
-        <meta name="viewport" content="width=device-width, initial-scale=0.5" />
+        {/* <meta name="viewport" content="width=device-width, initial-scale=0.5" /> */}
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js">
           {" "}
         </script>
@@ -223,11 +223,11 @@ export default function Home(props) {
             </div>
           );
         }
-        // console.log(element.text)
+        // console.log(element.text);
         let component = htmlToReactParser.parse(element.text);
-        if (!element.text.includes("<ul")) {
-          return <div key={i}>{component}</div>;
-        }
+        // if (!element.text.includes("<ul")) {
+        //   return <div key={i}>{component}</div>;
+        // }
         return component;
         // <div key={i} dangerouslySetInnerHTML={{ __html: element.text }} />
       })}
