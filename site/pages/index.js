@@ -129,6 +129,7 @@ export default function Home(props) {
   return (
     <>
       <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=0.5" />
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js">
           {" "}
         </script>

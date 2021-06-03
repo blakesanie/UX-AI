@@ -2,8 +2,22 @@
 
 <h1>UX-AI</h1>
 <p id="headline">Enabling websites to evaluate and enhance user experience with Artificial Intelligence</p>
-
+<div id="actions">
+<a href="https://www.npmjs.com/package/react-bubble-ui">
+<img alt="npm" src="https://img.shields.io/npm/v/ux-ai?style=for-the-badge&logo=npm" style="border-radius: 5px">
+</a>
+<a href="https://paypal.me/blakesanie">
+<img alt="Donate" src="https://img.shields.io/badge/Donate-%20?style=for-the-badge&logo=paypal&color=blue" style="border-radius: 5px">
+</a>
+<a href="https://github.com/blakesanie/UX-AI">
+<img alt="GitHub" src="https://img.shields.io/badge/GitHub-%20?style=for-the-badge&logo=github&color=grey" style="border-radius: 5px">
+</a>
+<a href="https://github.com/blakesanie/UX-AI/blob/main/LICENSE">
+<img alt="Apache 2.0" src="https://img.shields.io/github/license/blakesanie/UX-AI?logo=apache&style=for-the-badge&color=4B4BAB&label=%20" style="border-radius: 5px">
+</a>
 </div>
+</div>
+
 
 ## Table of Contents
 

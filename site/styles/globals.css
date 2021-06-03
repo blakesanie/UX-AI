@@ -116,11 +116,27 @@ h1 {
 h3 {
   font-size: 16px;
   margin-top: 50px;
-  margin-bottom: 10px;
 }
 
 h3 a {
   color: var(--green);
+}
+
+#actions {
+  margin-top: 30px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#actions > * {
+  margin: 6px 10px;
+  transition: transform 0.2s ease;
+}
+
+#actions > *:hover {
+  transform: scale(1.1);
 }
 
 #header p {
@@ -202,6 +218,7 @@ li a {
 }
 
 .codeBlock * {
+  font-size: 14px !important;
   font-family: "Oxygen Mono", monospace !important;
   background-color: var(--middleBlue) !important;
 }
