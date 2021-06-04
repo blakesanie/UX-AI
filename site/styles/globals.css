@@ -108,12 +108,9 @@ h1 {
 }
 
 h3 {
+  color: #999;
   font-size: 16px;
   margin-top: 50px;
-}
-
-h3 a {
-  color: var(--green);
 }
 
 #actions {
@@ -131,6 +128,11 @@ h3 a {
 
 #actions > *:hover {
   transform: scale(1.1);
+}
+
+#actions img {
+  border-radius: 5px;
+  overflow: hidden;
 }
 
 #header p {
@@ -165,7 +167,7 @@ h2 {
   margin-top: -40px;
 }
 
-#table-of-contents {
+.gone {
   display: none;
 }
 

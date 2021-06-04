@@ -2,27 +2,28 @@
 
 <h1>UX-AI</h1>
 <p id="headline">Enabling websites to evaluate and enhance user experience with Artificial Intelligence</p>
+<a class="gone">View this README in webpage form with a Demo</a>
 <div id="actions">
 <a href="https://www.npmjs.com/package/ux-ai">
-<img alt="npm" src="https://img.shields.io/npm/v/ux-ai?style=for-the-badge&logo=npm&color=red" style="border-radius: 5px; overflow: hidden;">
+<img alt="npm" src="https://img.shields.io/npm/v/ux-ai?style=for-the-badge&logo=npm&color=red">
 </a>
 <a href="https://www.npmjs.com/package/ux-ai">
-<img alt="npm bundle size" src="https://img.shields.io/bundlephobia/min/ux-ai?color=success&label=minified&logo=webpack&logoColor=white&style=for-the-badge" style="border-radius: 5px; overflow: hidden;">
+<img alt="npm bundle size" src="https://img.shields.io/bundlephobia/min/ux-ai?color=success&label=minified&logo=webpack&logoColor=white&style=for-the-badge">
 </a>
 <a href="https://paypal.me/blakesanie">
-<img alt="Donate" src="https://img.shields.io/badge/Donate-%20?style=for-the-badge&logo=paypal&color=blue" style="border-radius: 5px; overflow: hidden;">
+<img alt="Donate" src="https://img.shields.io/badge/Donate-%20?style=for-the-badge&logo=paypal&color=blue">
 </a>
 <a href="https://github.com/blakesanie/UX-AI">
-<img alt="GitHub" src="https://img.shields.io/badge/View%20Source-%20?style=for-the-badge&logo=github&color=grey" style="border-radius: 5px; overflow: hidden;">
+<img alt="GitHub" src="https://img.shields.io/badge/View%20Source-%20?style=for-the-badge&logo=github&color=grey">
 </a>
 <a href="https://github.com/blakesanie/UX-AI/blob/main/LICENSE">
-<img alt="Apache 2.0" src="https://img.shields.io/github/license/blakesanie/UX-AI?logo=apache&style=for-the-badge&color=4B4BAB&label=%20" style="border-radius: 5px; overflow: hidden;">
+<img alt="Apache 2.0" src="https://img.shields.io/github/license/blakesanie/UX-AI?logo=apache&style=for-the-badge&color=4B4BAB&label=%20">
 </a>
 </div>
 </div>
 
 
-## Table of Contents
+<h2 class="gone">Table of Contents</h2>
 
 <ul class="sticky">
 <li><a href="#introduction">Introduction</a></li>

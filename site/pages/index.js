@@ -1,7 +1,7 @@
 import Head from "next/head";
 import UXAI from "ux-ai";
 import { useEffect, useState, Fragment } from "react";
-import { CopyBlock, dracula, anOldHope, railscast } from "react-code-blocks";
+import { CopyBlock, sunburst } from "react-code-blocks";
 import Button from "@material-ui/core/Button";
 import Slider from "@material-ui/core/Slider";
 import Tooltip from "@material-ui/core/Tooltip";
@@ -98,7 +98,7 @@ export async function getStaticProps(context) {
           }
           current.text += lineHtml;
           if (line.includes(`id="headline"`)) {
-            current.text += `<h3>Created by <a href="https://blakesanie.com">Blake Sanie</a></h3>`;
+            current.text += `<h3>Created by <a href="https://blakesanie.com">Blake Sanie</a>, © ${new Date().getFullYear()}</h3>`;
           }
         }
       }
@@ -176,7 +176,7 @@ export default function Home(props) {
                 language={element.language.replace("html", "markup")}
                 showLineNumbers={false}
                 wrapLines
-                theme={railscast}
+                theme={sunburst}
               />
             </div>
           );
@@ -252,7 +252,7 @@ export default function Home(props) {
                   language="javascript"
                   showLineNumbers={false}
                   wrapLines
-                  theme={railscast}
+                  theme={sunburst}
                 />
               </div>
             </div>
