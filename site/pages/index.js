@@ -138,7 +138,27 @@ export default function Home(props) {
   return (
     <>
       <Head>
-        {/* <meta name="viewport" content="width=device-width, initial-scale=0.5" /> */}
+        <meta name="title" content="UX-AI" />
+        <meta
+          name="description"
+          content="Enabling websites to evaluate and enhance user experience with Artificial Intelligence. Integrate with your website today."
+        />
+        <meta name="robots" content="index, follow" />
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="language" content="English" />
+        <meta name="author" content="Blake Sanie" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <meta property="og:title" content="UX-AI" />
+        <meta property="og:image" content="/uxaiThumb.png" />
+        <meta
+          property="og:description"
+          content="Enabling websites to evaluate and enhance user experience with Artificial Intelligence. Integrate with your website today."
+        />
+        <meta property="og:url" content={"https://uxai.blakesanie.com"} />
+        <meta property="og:image:width" content="1964" />
+        <meta property="og:image:height" content="1244" />
+        <meta property="og:type" content="website" />
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js">
           {" "}
         </script>
