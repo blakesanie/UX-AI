@@ -156,8 +156,8 @@ export default function Home(props) {
           content="Enabling websites to evaluate and enhance user experience with Artificial Intelligence. Integrate with your website today."
         />
         <meta property="og:url" content={"https://uxai.blakesanie.com"} />
-        <meta property="og:image:width" content="1964" />
-        <meta property="og:image:height" content="1244" />
+        <meta property="og:image:width" content="1202" />
+        <meta property="og:image:height" content="602" />
         <meta property="og:type" content="website" />
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js">
           {" "}
